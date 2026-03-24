@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+pyodbc
+pymssql
+alembic
+python-dotenv
+langchain
+langchain-ollama
+pydantic
+httpx
