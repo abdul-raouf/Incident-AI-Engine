@@ -24,6 +24,43 @@ class CategoryScore(BaseModel):
     confidence: float            = Field(..., ge=0.0, le=1.0, description="Confidence score 0.0–1.0")
 
 
+# ── Classification-only (lightweight, no SOP) ────────────────────────────────
+
+class ClassifyRequest(BaseModel):
+    text: str = Field(..., min_length=10, description="Minimum 10 chars to classify")
+
+class ClassifyResponse(BaseModel):
+    classifications:        List[CategoryScore]
+    primary_classification: str
+    primary_confidence:     float
+    reasoning:              str
+    detected_language:      str
+
+# ── SOP Generation (requires a prior classification result) ──────────────────
+
+class GenerateSOPRequest(BaseModel):
+    text:                   str        = Field(..., description="Original incident text")
+    source:                 SourceType = Field(..., description="Source type of the input")
+    report_type:            str        = Field(..., description="Descriptive report type")
+    classifications:        List[CategoryScore]
+    primary_classification: str
+    primary_confidence:     float
+    reasoning:              str
+    detected_language:      str        = Field(default="en")
+
+class GenerateSOPResponse(BaseModel):
+    id:                     str
+    source:                 str
+    report_type:            str
+    primary_classification: str
+    primary_confidence:     float
+    detected_language:      str
+    classifications:        List[CategoryScore]
+    reasoning:              str
+    sop:                    str
+    is_flagged:             bool
+    created_at:             datetime
+
 # ── LLM Internal Schema ───────────────────────────────────────────────────────
 
 # class ClassificationOutput(BaseModel):
@@ -40,6 +77,8 @@ class ClassificationOutput(BaseModel):
     """
     scores:    List[CategoryScore] = Field(..., description="All categories with confidence scores")
     reasoning: str                 = Field(..., description="Brief reasoning for top classification")
+    detected_language: str         = Field(default="en", description="Detected language: 'ar' or 'en'")
+
 
     @property
     def primary(self) -> CategoryScore:
@@ -67,6 +106,7 @@ class AnalyzeResponse(BaseModel):
     primary_classification: str                   # ← top category name
     primary_confidence:     float
     reasoning:              str
+    detected_language:      str 
     sop:                    str
     is_flagged:             bool
     created_at:             datetime

@@ -12,6 +12,8 @@ odbc_connect_str = (
     f"UID={settings.DB_USER};"
     f"PWD={settings.DB_PASSWORD};"
     f"TrustServerCertificate=yes;"
+    f"&charset=utf8;" 
+    f"&unicode_results=True;"  
 )
 
 # URL-encode the connection string for SQLAlchemy
