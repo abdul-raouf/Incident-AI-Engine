@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered Incident Classification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f111a;
+            --card-bg: #1c1f2b;
+            --border-color: #2c2f41;
+            --accent-primary: #1de9b6;
+            --accent-glow: rgba(29, 233, 182, 0.2);
+            --text-main: #e0e0e0;
+            --text-muted: #94a3b8;
+            --error: #ff5252;
+            --warning: #ffab00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #1de9b6, #00bfa5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ── Input Section ───────────────────────────── */
+        .input-section {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            padding: 1.25rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 16px;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* ── BUTTON STYLING ───────────────────────────── */
+        .action-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        #classifyBtn {
+            background: var(--accent-primary);
+            color: #0f111a;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(29, 233, 182, 0.2);
+        }
+
+        #classifyBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(29, 233, 182, 0.4);
+            filter: brightness(1.1);
+        }
+
+        #classifyBtn:active {
+            transform: translateY(0);
+        }
+
+        #classifyBtn:disabled {
+            background: #2c2f41;
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Dashboard Stats ───────────────────────────── */
+        .dashboard-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(255,255,255,0.03);
+            padding: 1rem;
+            border-radius: 12px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #444;
+            transition: 0.3s;
+        }
+        .dot.active { background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); }
+        .dot.loading { background: var(--warning); animation: pulse 1s infinite; }
+        .dot.error { background: var(--error); }
+
+        .stats-grid {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
+        .stat-val { font-size: 14px; font-weight: 600; color: #fff; }
+
+        /* ── Classification Results ───────────────────────────── */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        .results-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .cat-row {
+            background: rgba(255,255,255,0.02);
+            padding: 12px;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+
+        .cat-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .cat-label { font-weight: 500; color: var(--text-muted); }
+        .cat-pct { font-weight: 700; transition: color 0.3s; }
+
+        .bar-track {
+            height: 6px;
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-primary);
+            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s;
+        }
+
+        .primary-badge {
+            background: var(--accent-primary);
+            color: #000;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-left: 6px;
+        }
+
+        /* ── Sidebar Elements ───────────────────────────── */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .side-box {
+            background: #111322;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .side-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        #reasoningBox {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #cbd5e1;
+            display: none;
+        }
+
+        .pill-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pill {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--border-color);
+            display: none;
+        }
+        .pill.visible { display: block; }
+        .pill.fast { color: var(--accent-primary); border: 1px solid var(--accent-primary); }
+
+        .min-hint { font-size: 12px; color: var(--text-muted); margin: 0; opacity: 0.6; }
+        .error-box {
+            background: rgba(255, 82, 82, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            border: 1px solid var(--error);
+        }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>AI Powered Incident Classification</h1>
+        <div class="pill-container">
+            <span id="langPill" class="pill"></span>
+            <span id="timePill" class="pill"></span>
+        </div>
+    </header>
+
+    <div class="input-section">
+        <textarea id="incidentText" placeholder="Describe the incident here... Press Enter to classify. Use Shift+Enter for new lines."></textarea>
+        
+        <div class="action-row">
+            <p class="min-hint" id="minHint">Minimum 10 characters required</p>
+            <button id="classifyBtn" onclick="triggerClassify()">
+                Analyze Incident &nbsp;&#x23CE;
+            </button>
+        </div>
+    </div>
+
+    <div class="dashboard-meta">
+        <div class="status-indicator">
+            <div class="dot" id="statusDot"></div>
+            <span id="statusText" style="font-size: 14px; color: var(--text-muted);">Ready to analyze</span>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Requests</span>
+                <span class="stat-val" id="statCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Avg Speed</span>
+                <span class="stat-val" id="statAvg">—</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="results-card">
+            <div class="results-grid" id="resultsGrid">
+                </div>
+            <div id="errorBox" class="error-box"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="side-box">
+                <span class="side-title">AI Reasoning</span>
+                <div id="reasoningBox">Waiting for analysis...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const MIN_CHARS = 10;
+
+const CAT_ID_MAP = {
+    'Fight': 'Fight', 'Fire': 'Fire', 'Accident': 'Accident',
+    'Suspicious Behaviour': 'SuspiciousBehaviour', 'Impersonation': 'Impersonation',
+    'Suicide': 'Suicide', 'Death': 'Death', 'Begging': 'Begging',
+    'Theft': 'Theft', 'Strike': 'Strike', 'Bribery': 'Bribery',
+    'Vandalism': 'Vandalism', 'Harassment': 'Harassment',
+    'Drug Abuse': 'DrugAbuse', 'Cyberattack': 'Cyberattack',
+    'Fraud': 'Fraud', 'Threat': 'Threat', 'Forgery': 'Forgery'
+};
+const CATEGORIES = Object.keys(CAT_ID_MAP);
+
+let abortCtrl = null;
+let lastText = '';
+let requestCount = 0;
+let totalMs = 0;
+
+const textarea = document.getElementById('incidentText');
+const resultsGrid = document.getElementById('resultsGrid');
+const classifyBtn = document.getElementById('classifyBtn');
+
+// Initialize Grid
+CATEGORIES.forEach(cat => {
+    const id = CAT_ID_MAP[cat];
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.innerHTML = `
+        <div class="cat-info">
+            <span class="cat-label" id="label-${id}">${cat}</span>
+            <span class="cat-pct" id="pct-${id}">0%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="bar-${id}"></div></div>
+    `;
+    resultsGrid.appendChild(row);
+});
+
+function setStatus(state, msg) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'dot ' + state;
+    document.getElementById('statusText').textContent = msg;
+}
+
+function resetUI() {
+    CATEGORIES.forEach(cat => {
+        const id = CAT_ID_MAP[cat];
+        const barEl = document.getElementById('bar-' + id);
+        const pctEl = document.getElementById('pct-' + id);
+        const lblEl = document.getElementById('label-' + id);
+
+        if (barEl) {
+            barEl.style.width = '0%';
+            barEl.style.background = 'var(--accent-primary)';
+        }
+        if (pctEl) {
+            pctEl.textContent = '0%';
+            pctEl.style.color = 'var(--text-muted)';
+        }
+        if (lblEl) lblEl.textContent = cat; 
+    });
+    document.getElementById('reasoningBox').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+}
+
+function renderResults(data, elapsedMs) {
+    const primary = data.primary_classification;
+    
+    data.classifications.forEach(item => {
+        const id = CAT_ID_MAP[item.category];
+        if (!id) return;
+        const pct = Math.round(item.confidence * 100);
+        const barEl = document.getElementById('bar-' + id);
+        const pctEl = document.getElementById('pct-' + id);
+        const lblEl = document.getElementById('label-' + id);
+
+        barEl.style.width = pct + '%';
+        pctEl.textContent = pct + '%';
+        
+        if (item.category === primary && pct > 0) {
+            lblEl.innerHTML = `${item.category} <span class="primary-badge">Match</span>`;
+            pctEl.style.color = 'var(--accent-primary)';
+        } else {
+            lblEl.textContent = item.category;
+            pctEl.style.color = 'var(--text-muted)';
+        }
+    });
+
+    const reasonBox = document.getElementById('reasoningBox');
+    if (data.reasoning) {
+        reasonBox.textContent = data.reasoning;
+        reasonBox.style.display = 'block';
+    }
+
+    document.getElementById('langPill').textContent = data.detected_language === 'ar' ? 'Arabic' : 'English';
+    document.getElementById('langPill').className = 'pill visible';
+    document.getElementById('timePill').textContent = Math.round(elapsedMs) + 'ms';
+    document.getElementById('timePill').className = 'pill visible fast';
+
+    requestCount++;
+    totalMs += elapsedMs;
+    document.getElementById('statCount').textContent = requestCount;
+    document.getElementById('statAvg').textContent = Math.round(totalMs / requestCount) + 'ms';
+
+    setStatus('active', `Analysis Complete: ${primary}`);
+}
+
+async function classify(text) {
+    if (abortCtrl) abortCtrl.abort();
+    abortCtrl = new AbortController();
+
+    resetUI();
+    setStatus('loading', 'AI is analyzing patterns...');
+    classifyBtn.disabled = true;
+    classifyBtn.innerHTML = 'Analyzing...';
+
+    const apiUrl = 'http://10.21.11.39:8000/api/v1/classify';
+    const t0 = performance.now();
+
+    try {
+        const res = await fetch(apiUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ text }),
+            signal:  abortCtrl.signal
+        });
+
+        const elapsedMs = performance.now() - t0;
+        if (!res.ok) throw new Error(`Server Error (${res.status})`);
+        const data = await res.json();
+        renderResults(data, elapsedMs);
+
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        setStatus('error', 'Classification Failed');
+        const errBox = document.getElementById('errorBox');
+        errBox.style.display = 'block';
+        errBox.textContent = err.message;
+    } finally {
+        classifyBtn.disabled = false;
+        classifyBtn.innerHTML = 'Analyze Incident &nbsp;&#x23CE;';
+    }
+}
+
+function triggerClassify() {
+    const text = textarea.value.trim();
+    if (text.length < MIN_CHARS) {
+        setStatus('error', 'Text too short');
+        return;
+    }
+    lastText = text;
+    classify(text);
+}
+
+textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        triggerClassify();
+    }
+});
+
+textarea.addEventListener('input', () => {
+    const text = textarea.value.trim();
+    document.getElementById('minHint').style.opacity = text.length < MIN_CHARS ? '1' : '0.2';
+});
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
@@ -9,11 +9,12 @@ from app.schemas.pydantic_schemas import (
     ReviewQueueItem, ResolveReviewRequest, CategoryScore
 )
 from app.models.db_models import IncidentReport
-from app.services.classifier import classify_text, classify_text_fast
+from app.services.classifier import classify_text, classify_text_fast, _build_fallback
 from app.services.sop_engine import generate_sop
 from app.services import review_queue as rq
 import uuid
 from datetime import datetime, timezone
+import asyncio
 
 router = APIRouter(prefix="/api/v1", tags=["Incidents"])
 
@@ -107,17 +108,27 @@ def resolve_review(
     )
 
 
+
+
 # ── POST /classify ─────────────────────────────────────────────────────────
 # Lightweight, stateless, no DB write — designed for as-you-type suggestions
 
 @router.post("/classify", response_model=ClassifyResponse)
-async def classify_incident(payload: ClassifyRequest):
+async def classify_incident(request: Request, payload: ClassifyRequest):
     """
-    Fast classification endpoint. No DB write.
-    Call this as the user types (with client-side debounce of 300-500ms).
-    Minimum 10 characters enforced by schema.
+    Fast classification endpoint. 
     """
+
+    if await request.is_disconnected():
+        raise HTTPException(status_code=499, detail="Client disconnected")
+    
     classification = await classify_text_fast(payload.text)
+
+    if await request.is_disconnected():
+        raise HTTPException(status_code=499, detail="Client disconnected")
+    
+    if classification is None:
+        classification = _build_fallback(payload.text)
 
     return ClassifyResponse(
         classifications        = classification.scores,
@@ -138,7 +149,6 @@ async def generate_sop_endpoint(
 ):
     """
     Generates SOP from a prior classification result and persists to DB.
-    Call this only when user confirms/submits — not on every keystroke.
     """
 
     # Reconstruct ClassificationOutput from the payload

@@ -30,6 +30,20 @@ Category definitions:
 - "Fire": flames, smoke, burning, fire outbreak (Arabic: حريق، نار، دخان)
 - "Accident": collision, crash, fall, unintentional injury (Arabic: حادث، تصادم، سقوط)
 - "Suspicious Behaviour": unattended bags, loitering, unusual conduct (Arabic: سلوك مشبوه)
+- "Impersonation": pretending to be another person (Arabic: انتحال شخصية)
+- "Suicide": self-harm or attempt to end life (Arabic: انتحار)
+- "Death": reported death or fatality (Arabic: وفاة)
+- "Begging": soliciting money in public (Arabic: تسول)
+- "Theft": stealing or robbery (Arabic: سرقة)
+- "Strike": work stoppage or labor protest (Arabic: اضراب)
+- "Bribery": offering or accepting illegal incentives (Arabic: رشاوي)
+- "Vandalism": damaging property (Arabic: تخريب، اتلاف)
+- "Harassment": inappropriate or unwanted behavior (Arabic: تحرش)
+- "Drug Abuse": use of illegal substances (Arabic: تعاطي ممنوعات)
+- "Cyberattack": hacking or unauthorized access (Arabic: اختراق)
+- "Fraud": deception for financial or personal gain (Arabic: احتيال)
+- "Threat": verbal or physical threat (Arabic: تهديد)
+- "Forgery": falsification of documents (Arabic: تزوير)
 
 Return ONLY this JSON, nothing else:
 {{
@@ -38,7 +52,21 @@ Return ONLY this JSON, nothing else:
     {{"category": "Fight",                "confidence": <float>}},
     {{"category": "Fire",                 "confidence": <float>}},
     {{"category": "Accident",             "confidence": <float>}},
-    {{"category": "Suspicious Behaviour", "confidence": <float>}}
+    {{"category": "Suspicious Behaviour", "confidence": <float>}},
+    {{"category": "Impersonation",        "confidence": <float>}},
+    {{"category": "Suicide",              "confidence": <float>}},
+    {{"category": "Death",                "confidence": <float>}},
+    {{"category": "Begging",              "confidence": <float>}},
+    {{"category": "Theft",                "confidence": <float>}},
+    {{"category": "Strike",               "confidence": <float>}},
+    {{"category": "Bribery",              "confidence": <float>}},
+    {{"category": "Vandalism",            "confidence": <float>}},
+    {{"category": "Harassment",           "confidence": <float>}},
+    {{"category": "Drug Abuse",           "confidence": <float>}},
+    {{"category": "Cyberattack",          "confidence": <float>}},
+    {{"category": "Fraud",                "confidence": <float>}},
+    {{"category": "Threat",               "confidence": <float>}},
+    {{"category": "Forgery",              "confidence": <float>}}
   ],
   "reasoning": "<one short sentence>"
 }}"""),
@@ -130,6 +158,20 @@ def _parse_raw(raw: dict, original_text: str = "") -> ClassificationOutput:
             IncidentCategory.FIRE,
             IncidentCategory.ACCIDENT,
             IncidentCategory.SUSPICIOUS_BEHAVIOUR,
+            IncidentCategory.IMPERSONATION,
+            IncidentCategory.SUICIDE,
+            IncidentCategory.DEATH,
+            IncidentCategory.BEGGING,
+            IncidentCategory.THEFT,
+            IncidentCategory.STRIKE,
+            IncidentCategory.BRIBERY,
+            IncidentCategory.VANDALISM,
+            IncidentCategory.HARASSMENT,
+            IncidentCategory.DRUG_ABUSE,
+            IncidentCategory.CYBERATTACK,
+            IncidentCategory.FRAUD,
+            IncidentCategory.THREAT,
+            IncidentCategory.FORGERY
         ]
     ]
 
@@ -161,7 +203,6 @@ def _get_llm(num_predict: int | None = None) -> ChatOllama:
     return ChatOllama(**kwargs)
 
 
-# ── Safe JSON extractor (fallback if <think> blocks slip through) ─────────────
 
 def _extract_json(raw_output: str) -> dict:
     """
@@ -189,7 +230,7 @@ async def classify_text_fast(text: str) -> ClassificationOutput:
         model=settings.OLLAMA_MODEL,
         temperature=0,
         format="json",
-        num_predict=5000,   # ← cap token output for speed
+        num_predict=2500,   # ← cap token output for speed
         extra_body={"think": False}
     )
 

@@ -10,3 +10,8 @@ app/services/__pycache__/classifier.cpython-311.pyc
 app/schemas/__pycache__/pydantic_schemas.cpython-311.pyc
 app/models/__pycache__/db_models.cpython-311.pyc
 app/core/__pycache__/database.cpython-311.pyc
+error.log
+out.log
+app/__pycache__/main.cpython-311.pyc
+app/api/__pycache__/routes.cpython-311.pyc
+app/schemas/__pycache__/pydantic_schemas.cpython-311.pyc
